@@ -1,6 +1,6 @@
-# Advent of Code 2022 Template
+# Advent of Code 2022
 
-## How to use
+## How to use (from template)
 
 1. Clone this repo into your local directory. 
 2. Copy your cookie from AOC 2022 into a file named session_cookie.txt (this is already listed in .gitignore).
