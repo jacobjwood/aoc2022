@@ -7,7 +7,7 @@ import requests
 def main(day):
     
     with open("session_cookie.txt",'r') as f:
-        cookie = f.readline()
+        cookie = f.readline().strip()
     
     print(cookie)
     
