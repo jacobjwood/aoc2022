@@ -9,8 +9,6 @@ def main(day):
     with open("session_cookie.txt",'r') as f:
         cookie = f.readline().strip()
     
-    print(cookie)
-    
     headers = {'session': cookie}
     url = "https://adventofcode.com/2022/day/" + day + "/input"
 
