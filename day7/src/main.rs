@@ -10,6 +10,7 @@ fn main() {
 
     let mut dir_size : HashMap<&str, i64> = HashMap::new();
     let mut dir_stack = Vec::<&str>::new();
+    let mut running_total_check : i64 = 0;
 
     for line in contents.lines() {
         let line_vec = line.split(" ").collect::<Vec<&str>>();
@@ -28,21 +29,26 @@ fn main() {
                 continue
             } else {
                 let file_size = line_vec[0].parse::<i64>().unwrap();
-                
-                println!("--- Adding size {} to {:?}", file_size, dir_stack);
+                running_total_check += file_size;
                 for dir in dir_stack.iter() {
                     *dir_size.entry(dir).or_insert(0) += file_size;
+                    
                     //let mut entry = dir_size.entry(dir).or_insert(0);
                     //println!("{}", entry);
                     //*entry += file_size;
                     //println!("{}", entry);
                 }
+                let size_tracker : Vec<i64> = dir_stack.iter().map(|x| *dir_size.get(x).unwrap()).collect();
+                println!("--- Adding size {} to {:?} now has size {:?}", file_size, dir_stack, size_tracker);
 
             }
         }
     }
     println!("{:#?}", dir_size);
     let sum : i64 = dir_size.iter().filter(|(k, v)| **v <= 100000).map(|(k, v)| v).sum();
+    let filtered : HashMap<&str, i64> = dir_size.into_iter().filter(|(k, v)| *v <= 100000).collect();
+    println!("{:#?}", filtered);
+    assert_eq!(running_total_check, 40528671);
     println!("{}", sum);
 }
 
