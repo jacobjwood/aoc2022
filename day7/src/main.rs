@@ -8,9 +8,10 @@ fn main() {
     let contents = fs::read_to_string(file_path)
         .expect("Should have been able to read the file");
 
-    let mut dir_size : HashMap<&str, i64> = HashMap::new();
+    let mut dir_size : HashMap<String, i64> = HashMap::new();
     let mut dir_stack = Vec::<&str>::new();
     let mut running_total_check : i64 = 0;
+    let mut vec_str : String = String::new();
 
     for line in contents.lines() {
         let line_vec = line.split(" ").collect::<Vec<&str>>();
@@ -30,26 +31,40 @@ fn main() {
             } else {
                 let file_size = line_vec[0].parse::<i64>().unwrap();
                 running_total_check += file_size;
-                for dir in dir_stack.iter() {
-                    *dir_size.entry(dir).or_insert(0) += file_size;
+
+                vec_str = dir_stack.join("$");
+
+                println!("{}", vec_str);
+                for idx in 0..dir_stack.len() {
+                    let v = dir_stack[0..=idx].join("$");
+                    println!("JEFF {:?}", v);
+                    *dir_size.entry(v).or_insert(0) += file_size;
                     
                     //let mut entry = dir_size.entry(dir).or_insert(0);
                     //println!("{}", entry);
                     //*entry += file_size;
                     //println!("{}", entry);
                 }
-                let size_tracker : Vec<i64> = dir_stack.iter().map(|x| *dir_size.get(x).unwrap()).collect();
-                println!("--- Adding size {} to {:?} now has size {:?}", file_size, dir_stack, size_tracker);
+                //let size_tracker : Vec<i64> = dir_stack.iter().map(|x| *dir_size.get(x).unwrap()).collect();
+                //println!("--- Adding size {} to {:?} now has size {:?}", file_size, dir_stack, size_tracker);
 
             }
         }
     }
     println!("{:#?}", dir_size);
     let sum : i64 = dir_size.iter().filter(|(k, v)| **v <= 100000).map(|(k, v)| v).sum();
-    let filtered : HashMap<&str, i64> = dir_size.into_iter().filter(|(k, v)| *v <= 100000).collect();
-    println!("{:#?}", filtered);
-    assert_eq!(running_total_check, 40528671);
+    //let filtered : HashMap<String, i64> = dir_size.into_iter().filter(|(k, v)| *v <= 100000).collect();
+    //println!("{:#?}", filtered);
+    //assert_eq!(running_total_check, 40528671);
     println!("{}", sum);
+
+    // 70mil
+    // 30mil needed
+    let unused_space : i64 = 70000000 - dir_size.get(&String::from("/")).unwrap();
+    let needed_space : i64 = 30000000 - unused_space;
+    println!("{}", needed_space);
+    let filtered : i64 = dir_size.into_iter().filter(|(k, v)| v >= &needed_space).map(|(k, v)| v).min().unwrap();
+    println!("{:?}", filtered);
 }
 
 // can implement this as a stack with vector and take a hashmap that
