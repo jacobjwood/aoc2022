@@ -70,7 +70,7 @@ fn solution(n_knots: i32) -> usize {
 
                 knot_vec[knot_idx + 1] = (knot_2_x, knot_2_y);
             }
-            //println!("      {:?}", knot_vec);
+            // println!("      {:?}", knot_vec);
 
             t_states.insert(*knot_vec.last().unwrap());
         }
