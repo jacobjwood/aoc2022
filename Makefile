@@ -10,4 +10,3 @@ rust:
 	touch day$(day)/input.txt
 	python3 setup.py $(day)
 	cp template.rs day$(day)/src/main.rs
-	cd day$(day)
