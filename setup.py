@@ -16,7 +16,7 @@ def main(day):
     resp = session.get(url,cookies=headers)
 
     with open("day" + day + "/input.txt", 'w') as f:
-        f.write(resp.text)
+        f.write(resp.text[:-1]) # Removes blankline at bottom of request
         
     print(day)
 
