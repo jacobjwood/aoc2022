@@ -17,8 +17,9 @@ fn main() {
         .collect::<Vec<i32>>();
 
     split_vec.sort_by(|a, b| b.cmp(a));
-
+    
     let part1: i32 = split_vec[0];
+
     let part2: i32 = split_vec[0..3].iter().sum();
 
     println!("Part 1: {}", part1);
