@@ -1,19 +1,19 @@
 use std::fs;
 use std::collections::VecDeque;
 
-fn parse_line(line : &str) -> VecDeque<(String, usize)> {
+fn parse_line(line : &str) -> Vec<String> {
 
     println!("LINE {}", line);
 
-    let split_line = line[1..line.len()-1]
-        .replace("[]", "[_]")
+    let split_line = line
+        //.replace("[]", "[_]")
         .replace("]", ",]")
         .split_inclusive(&['[', ']', ','])
         .filter(|x| *x != ",")
         .map(|x| x.replace(",", ""))
-        .map(|x| x.replace("$", ""))
-        .collect::<VecDeque<String>>();
+        .collect::<Vec<String>>();
 
+    /*
     let mut depth_line : VecDeque<(String, usize)> = VecDeque::new();
 
     let mut depth = 0;
@@ -26,8 +26,8 @@ fn parse_line(line : &str) -> VecDeque<(String, usize)> {
         }
     }
     
-
-    depth_line
+    */
+    split_line
 
     
 }
@@ -67,85 +67,8 @@ fn compare(left: &mut VecDeque<String>, right: &mut VecDeque<String>) {
 }
 */
 
-fn compare(left: &mut VecDeque<(String, usize)>, right: &mut VecDeque<(String, usize)>) -> bool {
-    println!("LEFT {:?}", left);
-    println!("RIGHT {:?}", right);
-
-    let mut max_depth = 0;
-
-    while !right.is_empty() && !left.is_empty() {
-        let (l_item, l_depth) = left.pop_front().unwrap();
-        let (r_item, r_depth) = right.pop_front().unwrap();
-
-        let mut prev_depth = 0;
-        let tmp_max_depth = std::cmp::max(l_depth, r_depth);
-
-        if l_depth == r_depth {
-            if l_item == r_item { 
-                max_depth = tmp_max_depth;
-                continue; 
-            }
-            else if l_item != "_" && r_item != "_" {
-                return l_item < r_item;
-            }
-        } else {
-            if r_depth == max_depth && l_depth < max_depth {
-                return true;
-            } else if r_depth < max_depth && l_depth == max_depth {
-                return false;
-            } else {
-
-                if r_item == l_item {
-                    max_depth = tmp_max_depth;
-                    println!("HERE");
-                    continue;
-                } else {
-                    return r_item > l_item;
-                }
-            }
-        }
-        /* 
-        if r_item == "_" && l_item != "_" {
-            println!("WRONG ORDER");
-            return false;
-        } else {
-            if r_item > l_item {
-                println!("RIGHT ORDER");
-                return true;
-            } else if l_item > r_item {
-                println!("WRONG ORDER");
-                return false;
-            } else {
-                println!("{} {}", l_item, r_item);
-                if l_item == "_" {
-                    if l_depth > r_depth {
-                        println!("WRONG ORDER");
-                        return false;
-                    }
-                }
-                continue;
-            }
-        }
-
-        */
-    }
-
-
-    match !left.is_empty() {
-        true => {
-            println!("WRONG ORDER");
-            false
-        },
-        false => {
-            println!("RIGHT ORDER");
-            true
-        }
-    }
-    
-}
-
 fn main() {
-    let file_path = "input_test.txt";
+    let file_path = "input.txt";
     println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path)
@@ -156,14 +79,42 @@ fn main() {
     let mut index = 1;
     let mut count = 0;
 
+    let mut packet_vec : Vec<Vec<String>> = Vec::new();
+    packet_vec.push(parse_line(&"[[2]]"));
+    packet_vec.push(parse_line(&"[[6]]"));
+
     for pair_lines in contents.split("\n\n") {
+
+        println!("{}", "=".repeat(40));
+        println!("NEW LINE");
+        println!("{}", "=".repeat(40));
         let pairs = pair_lines.split("\n").collect::<Vec<_>>();
         let mut left = parse_line(pairs[0]);
         let mut right = parse_line(pairs[1]);
+
+        println!("left {:?}", left);
+        println!("right {:?}", right);
+
+        let result = basic_recursion(&mut left, &mut right, &mut 0, &mut 0);
+
+        println!("RESULT: {}", result);
+        if result {
+            count += index;
+            packet_vec.push(right);
+            packet_vec.push(left);
+        } else {
+            packet_vec.push(left);
+            packet_vec.push(right);
+        }
+
+        // std::thread::sleep_ms(10000);
+
+        index += 1;
         //println!("PRINTING PAIRS");
         //println!("{}", pair_lines);
+        /*
         let output = compare(&mut left, &mut right);
-        println!("{}", output);
+        // println!("{}", output);
 
         if output {
             count += index;
@@ -171,21 +122,107 @@ fn main() {
         //println!("{:?}\n{:?}", left, right);
         // compare(&mut left, &mut right);
         index += 1;
-
+        */
+        println!("\n\n");
         
     }
 
-    println!("{}", count);
+    println!("Part 1: {}", count);
+
+    println!("{:?}", packet_vec);
+
+    packet_vec.sort_by(|v1, v2| (basic_recursion(&mut v2.to_owned(), &mut v1.to_owned(), &mut 0, &mut 0) as usize).cmp(&(basic_recursion(&mut v1.to_owned(), &mut v2.to_owned(), &mut 0, &mut 0) as usize)));
+
+    let pv = packet_vec.into_iter().map(|v| v.into_iter().collect::<String>()).collect::<Vec<String>>();
+
+    println!("{:#?}", pv);
+
+    let mut pac2 = 0;
+    let mut pac6 = 0;
+
+    for (idx, pac) in pv.iter().enumerate() {
+        match &pac[..] {
+            "[[2]]" => pac2 = idx + 1,
+            "[[6]]" => pac6 = idx + 1,
+            _ => (),
+        }
+    }
+
+    println!("{}", pac2 * pac6);
+
+
+
 }
 
 // so recursion does work
-fn basic_recursion(vec: &mut Vec<String>, vec1: &mut Vec<String>) -> bool {
-    let item1 = vec.pop().unwrap();
-    let item2 = vec1.pop().unwrap();
+fn basic_recursion(left: &mut Vec<String>, right: &mut Vec<String>, l_idx: &mut usize, r_idx: &mut usize) -> bool {
 
-    if item1 == "]".to_string() {
-        return true
+    //let item1 = vec.pop_front().unwrap();
+    //let item2 = vec1.pop_front().unwrap();
+    let mut left_val = &left[*l_idx];
+    let mut right_val = &right[*r_idx];
+    
+    println!("LEFT_VAL {} RIGHT VAL {}", left_val, right_val);
+
+    let left_is_int = match left_val.as_str() {
+        "[" => false,
+        "]" => false,
+        _ => true
+    };
+
+    let right_is_int = match right_val.as_str() {
+        "[" => false,
+        "]" => false,
+        _ => true
+    };
+
+    if left_is_int && right_is_int { // both are ints
+        if left_val == right_val { // ints equal
+            *l_idx += 1;
+            *r_idx += 1;
+            return basic_recursion(left, right, l_idx, r_idx);
+        } else {
+            return left_val.parse::<usize>().unwrap() < right_val.parse::<usize>().unwrap();
+        }
+    } else if *left_val == "[" && *right_val == "[" { // both are lists
+        *l_idx += 1;
+        *r_idx += 1;
+        return basic_recursion(left, right, l_idx, r_idx);
+    } else if *left_val == "]" && *right_val != "]" { // left runs out of items before 
+        return true;
+    } else if *right_val == "]" && *left_val != "]" { // right runs out of items before
+        return false;
+    } else if *right_val == "]" && *left_val == "]" {
+        *l_idx += 1;
+        *r_idx += 1;
+        return basic_recursion(left, right, l_idx, r_idx);
+    // THESE FEW WILL BE TRICKY
+    } else if left_is_int && *right_val == "[" {
+        let lv = left_val.to_owned();
+        left.insert(*l_idx+1, "]".to_string());
+        left.insert(*l_idx, "[".to_string());
+        // *l_idx += 1;
+        // *r_idx += 1;
+        // *l_idx -= 1;
+        return basic_recursion(left, right, l_idx, r_idx);
+    } else if right_is_int && *left_val == "[" {
+        let rv = right_val.to_owned();
+        println!("HERE JEFF");
+        right.insert(*r_idx+1, "]".to_string());
+        right.insert(*r_idx, "[".to_string());
+        println!("RIGHT AFTER {:?}", right);
+        // *l_idx += 1;
+        // *r_idx -= 1;
+        return basic_recursion(left, right, l_idx, r_idx);
     } else {
-        basic_recursion(vec, vec1)
+        // This should never be met
+        println!("IM HERE");
+        std::thread::sleep_ms(40000000);
+        return false;
     }
+}
+
+fn sort_vecs(vec1: &Vec<String>, vec2: &Vec<String>) {
+    let mut vec1_copy = vec1.to_owned();
+    let mut vec2_copy = vec2.to_owned();
 }
