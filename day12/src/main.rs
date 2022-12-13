@@ -167,4 +167,7 @@ fn shortest_path(
         }
     }
 
+    // need this in case of loop not executing
+    usize::MAX
+
 }
