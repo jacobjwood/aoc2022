@@ -167,8 +167,4 @@ fn shortest_path(
         }
     }
 
-    match dist.get(&goal) {
-        Some(distance) => *distance,
-        None => usize::MAX,
-    }
 }
