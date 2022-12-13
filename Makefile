@@ -15,7 +15,8 @@ rust:
 	then \
 		cargo new day$(day); \
 		touch day$(day)/input.txt; \
-		python3 setup.py $(day); \
+		#python3 setup.py $(day); \
+		./_setup/release/_setup
 		cp template.rs day$(day)/src/main.rs; \
 	else \
 		echo "Directory for day $(day) already exists"; \
