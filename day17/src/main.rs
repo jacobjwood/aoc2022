@@ -2,7 +2,7 @@ use std::fs;
 use std::collections::HashSet;
 
 fn main() {
-    let file_path = "input_test.txt";
+    let file_path = "input.txt";
     println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path)
@@ -10,16 +10,13 @@ fn main() {
 
     let blow_stream = contents.chars().filter(|c| *c != '\n').collect::<Vec<char>>();
 
-    //println!("{:?}", blow_stream);
-    println!("{:?}", blow_stream.len()*5);
-
     let mut rock_count = 0;
     let mut cycle_count = 0;
 
     // initialise the floor
     let mut settled_set = HashSet::from([(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]);
 
-    while rock_count < 22 {
+    while rock_count < 2022 {
 
         // initialise the rock with top left coordinate at 0, 0
         let mut rock = rock_types(&rock_count);
@@ -40,12 +37,12 @@ fn main() {
        
     }
 
+    // print_grid(&settled_set);
     println!("Part 1: {:?}", settled_set.iter().map(|r| r.0).max().unwrap() - settled_set.iter().map(|r| r.0).min().unwrap());
 
     let mut rock_count = 0;
     let mut cycle_count = 0;
     let mut height_count = 0;
-    let mut height_count1 = 0;
 
     let mut settled_set = HashSet::from([(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]);
     let mut floor_set : Vec<HashSet<Vec<(i32, i32)>>> = Vec::new();
@@ -54,18 +51,16 @@ fn main() {
         floor_set.push(HashSet::new());
     }
 
-    let mut rc_break = 0;
-    let mut hc_break = 0;
     let mut found_match = false;
     let mut first_rc_break = 0;
     let mut first_hc_break = 0;
     let mut first_cc_break = 0;
     let mut first_repeat : Vec<(i32, i32)> = Vec::new();
-    let mut target = 10000;
-    let mut first_track = 0;
-    let mut remainder = 0;
+    let first_track;
+    let remainder;
 
-    'outer: while rock_count < target {
+    // some arbitrarily large target such that we find a repeat in the set
+    'outer: loop {
 
         // initialise the rock with top left coordinate at 0, 0
         let mut rock = rock_types(&rock_count);
@@ -74,74 +69,72 @@ fn main() {
         // get max depth of rock segment and push everything settled "further down" so that it is 3 away
         let rock_height = rock.iter().map(|r| r.0).max().unwrap();
         let settled_height = settled_set.iter().map(|r| r.0).min().unwrap();
-        let floor_depth = settled_set.iter().map(|r| r.0).max().unwrap();
         settled_set = settled_set.iter().map(|r| (r.0 + rock_height + 4 - settled_height, r.1)).collect();
 
         // check collision
         blow_rock(rock, &mut settled_set, &blow_stream, &mut cycle_count);
 
         
-        //println!("LEN SS {}", settled_set.len());
         rock_count += 1;
 
         let depth = settled_set.iter().map(|r| r.0).max().unwrap();
         let min_depth = settled_set.iter().map(|r| r.0).min().unwrap();
 
-        //println!("DEPTH WHAT {}", depth - min_depth);
-
+        // initialise new set to check if all horizontal states are covered
         let mut breadth_set : HashSet<i32> = HashSet::new();
 
-        //println!("{} {} {}", rock_count, min_depth, depth);
         for k in min_depth..=depth {
+
+            // see if all horizontal states have been covered
             let bs = settled_set.iter().filter(|r| r.0 == k).map(|r| r.1).collect::<HashSet<_>>();
 
             breadth_set.extend(bs);
 
+            // check all floor states have been covered (not actually sufficient, the next hack fixes it)
             if breadth_set.len() == 7 {
-                //println!("New set found {}", k);
-
-                //println!("JEFF {} {} {}", min_depth, depth, k);
-                // println!("D-MD {}", depth - min_depth);
+                
+                // this is a bit hacky, but basically just add enough k that there is a definite floor (had to tune this)
+                // choose a sufficiently large k that there is definitely a floor
                 settled_set = settled_set.into_iter().filter(|r| r.0 <= k + 200).collect();
                 let new_depth = settled_set.iter().map(|r| r.0).max().unwrap();
-
-                if new_depth - min_depth == depth - min_depth {
-                    // do nothing
-                } else {
+                
+                // if we're shifting the set, need to keep track of the shift so we can 
+                // add this shift to the height count
+                if new_depth - min_depth != depth - min_depth {
                     height_count += (depth - min_depth) - (new_depth - min_depth);
-                    // println!("height_count {}", height_count);
                 }
 
-                //println!("{}", k == depth);
-                //println!("{}", new_depth - min_depth);
-
-                //println!("DEPTH_NEW {}", new_depth);
-                //println!("{} {}", k + 5, min_depth);
+                // generate the current settled set into a sorted vector of positions
                 let mut ss = settled_set.iter().cloned().collect::<Vec<(i32, i32)>>();
                 ss.sort();
 
+                // check if we've seen this configuration before FOR THE SAME ROCK
                 if floor_set[rock_count % 5].contains(&ss) {
 
+                    // if already found a match, then we can just multiply this
+                    // saves us iterating 1e12 times
                     if found_match {
+                        // if we've seen this configuration before for the same rock that just fell
                         if ss == first_repeat && rock_count % 5 == first_rc_break % 5 {
-                            println!("HELLO IT'S REPEATED");
                             settled_set = HashSet::from_iter(ss.to_owned().into_iter());
-                            print_grid(&settled_set);
+
+                            // the differences between the first and second time we saw the same config
+                            // we need these to multiply / tally up
                             let rc_diff = rock_count - first_rc_break;
                             let hc_diff = height_count + settled_set.iter().map(|r| r.0).max().unwrap() - settled_set.iter().map(|r| r.0).min().unwrap() - first_hc_break;
                             let cc_diff = cycle_count - first_cc_break;
 
+                            // the remaining repetitions needed
                             let n_repetitions = (1000000000000 - (rock_count) as i64) as i64 / rc_diff as i64;
-                            println!("UH {} {} {} {}", rc_diff, hc_diff, first_hc_break, first_cc_break);
-                            // height with remaining iters
-                            println!("remainder {}", (1000000000000 - (rock_count + rc_diff) as i64) as i64 % rc_diff as i64);
-                            println!("{} {}", (rock_count as i64 + ((n_repetitions + 1) * rc_diff as i64)) % 5, (cycle_count as i64 + ((n_repetitions + 1) * cc_diff as i64) as i64) % blow_stream.len() as i64);
+                            // height before the remainder is accounted for
                             first_track = first_hc_break as i64 + (hc_diff as i64 * (n_repetitions + 1));
+                            // find out the remaining number of rocks we need to simulate
                             remainder = ((1000000000000 - (rock_count + rc_diff) as i64) as i64 % rc_diff as i64) as usize;
+
+                            // increase the rock and cycle counts accordingly
+                            // need to +1 to n_repetitions to account for the fact we've already seen 1 repetition before this (the first one we match that triggers this condition)
                             rock_count = ((rock_count as i64 + ((n_repetitions + 1) * rc_diff as i64)) % 5) as usize;
                             cycle_count = ((cycle_count as i64 + ((n_repetitions + 1) * cc_diff as i64) as i64) % blow_stream.len() as i64) as usize; 
-                            println!("{}", first_hc_break as i64 + (hc_diff as i64 * (n_repetitions + 1)));
-                            // 82 out
                             break 'outer;
                         }
                     }
@@ -153,50 +146,26 @@ fn main() {
                         first_cc_break = cycle_count;
                         first_repeat = ss.to_owned();
                         settled_set = HashSet::from_iter(ss.to_owned().into_iter());
-                        print_grid(&settled_set);
                         found_match = true;
                     }
 
-                    
-
-                    /*
-                    println!("RC: {}", rock_count);
-                    rc_break = rock_count;
-                    hc_break = 
-                    println!("rc_break {} hc_break {}", rc_break, hc_break);
-                    settled_set = HashSet::from_iter(ss.into_iter());
-                    break 'outer;
-                    */ 
-                } else if !found_match {
+                } else {
+                    // if the floor_set doesn't contain this configuration,
+                    // then need to insert it into the set
                     floor_set[rock_count % 5].insert(ss);
                 }   
-                //print_grid(&settled_set);
                 break;
             }
         }
-        
-
-
-
-        //height_count += floor_depth - settled_height;
-
-        if rock_count % 1000 == 0 {
-            println!("Rock count: {}", rock_count);
-        }
-
-        //print_grid(&settled_set);
     };
 
-    // initialise the floor
-    //let mut settled_set = HashSet::from([(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]);
-
-    print_grid(&settled_set);
+    // keep track of the initial height so we can get the extra bit
     let ss_1 = settled_set.iter().map(|r| r.0).max().unwrap() - settled_set.iter().map(|r| r.0).min().unwrap();
+    // how many rounds between rock_count and the extra bit we need to iterate over
     let rmder = remainder as usize + rock_count as usize;
 
-    while rock_count < rmder.try_into().unwrap() {
-
-        //println!("{}", ss_1);
+    // loop over the extra bit that isn't in the cycle
+    while rock_count < rmder {
 
         // initialise the rock with top left coordinate at 0, 0
         let mut rock = rock_types(&rock_count);
@@ -217,20 +186,7 @@ fn main() {
        
     }
 
-    //print_grid(&settled_set);
-
-    println!("Part 1: {:?}", first_track + settled_set.iter().map(|r| r.0).max().unwrap() as i64 - settled_set.iter().map(|r| r.0).min().unwrap() as i64 - ss_1 as i64);
-
-
-    //println!("{} {}", rc_break, hc_break);
-    println!("HC: {}", height_count + settled_set.iter().map(|r| r.0).max().unwrap() - settled_set.iter().map(|r| r.0).min().unwrap());
-
-    // 63, 102 periodicity so 
-    // 1514285714288
-    // 1619047619047
-
-
-    println!("{}", 1000000000000 as i64 * 102 / 63);
+    println!("Part 2: {:?}", first_track + settled_set.iter().map(|r| r.0).max().unwrap() as i64 - settled_set.iter().map(|r| r.0).min().unwrap() as i64 - ss_1 as i64);
 
 
 }
