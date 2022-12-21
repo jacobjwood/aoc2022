@@ -68,7 +68,7 @@ fn bound(
     let estimand = 6;
 
     // this bound estimate is the thing I need to get right
-    let estimate = (robot_count.3 * time_remaining) + item_count.3 + estimand;
+    let estimate = (robot_count.3 * time_remaining) + item_count.3 + 25 - time_remaining;
     // println!("ES {}, CB {}", estimate, current_best);
     
     estimate >= *current_best
@@ -151,7 +151,7 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
 
         if bound(&best_geode, &time, &new_item_count, &robot_count, &recipes) {
             traj_vec.push((time + 1, new_item_count, robot_count));
-            traj_vec.sort_by(|a, b| a.1.3.cmp(&b.1.3));
+            traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
         }
         
     }
