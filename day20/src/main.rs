@@ -2,7 +2,7 @@ use std::fs;
 use std::collections::{HashSet, HashMap, VecDeque};
 
 fn main() {
-    let file_path = "input_test.txt";
+    let file_path = "input.txt";
     println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path)
@@ -31,19 +31,23 @@ fn main() {
 
     for i in 1..=10 {
         (vec, configs) = mix_signal_2(vec, &original_vec, configs);
-        println!("{:?}", original_vec);
-        println!("{:?}", vec[0..7].to_owned());
-        println!("{:?}", configs.get(&original_vec[0]).unwrap());
+        //println!("{:?}", original_vec);
+        //println!("{:?}", vec[0..7].to_owned());
+        //println!("{:?}", configs.get(&original_vec[0]).unwrap());
         if i == 1 {
-            assert_eq!(vec![0, -2434767459, 3246356612, -1623178306, 2434767459, 1623178306, 811589153], vec);
+            //assert_eq!(vec![0, -2434767459, 3246356612, -1623178306, 2434767459, 1623178306, 811589153], vec);
             //assert_eq!(vec![1, 2, -3, 4, 0, 3, -2], vec);
         }
         if i == 2 {
-            assert_eq!(vec![0, 2434767459, 1623178306, 3246356612, -2434767459, -1623178306, 811589153], vec);
+            //assert_eq!(vec![0, 2434767459, 1623178306, 3246356612, -2434767459, -1623178306, 811589153], vec);
         }
-        println!("AFTER {} ROUND OF MIXING {:?}", i, vec);
+        if i == 3 {
+            println!("{}", i);
+            //assert_eq!(vec![0, 811589153, 2434767459, 3246356612, 1623178306, -1623178306, -2434767459], vec);
+        }
+        //println!("AFTER {} ROUND OF MIXING {:?}", i, vec);
         println!("\n\n");
-        println!("OV {:?}", original_vec);
+        //println!("OV {:?}", original_vec);
     }
 
     let zero_index = vec.iter().enumerate().filter(|(_, e)| *e == &0).map(|(idx, _)| idx).next().unwrap();
@@ -170,20 +174,20 @@ fn mix_signal_2(mut vec: Vec<i64>, original_vec: &Vec<i64>, mut configs: HashMap
     let mut vec_numbers : HashSet<&i64> = HashSet::from_iter(vec.iter());
     let mut visited : HashSet<usize> = HashSet::new();
     //println!("{:?}", configs);
-    //let mut cfgs = configs.iter().map(|(k, v)| (k.to_owned(), v.iter().map(|e| e.to_owned()).collect::<Vec<usize>>())).collect::<HashMap<i64, Vec<usize>>>();
-    let mut configs = vec_numbers.iter().map(|num| (**num, vec.iter().enumerate().filter(|(_, e)| **e == **num).map(|(idx, _)| idx).collect::<VecDeque<usize>>())).collect::<HashMap<i64, VecDeque<usize>>>();
-    // need [0, 2434767459, 1623178306, 3246356612, -2434767459, -1623178306, 811589153]
-    // [0, 811589153, -1623178306, 3246356612, -2434767459, 2434767459, 1623178306]
-    // [811589153, 0, 3246356612, -1623178306, -2434767459, 2434767459, 1623178306]
+    //let mut configs = vec_numbers.iter().map(|num| (**num, vec.iter().enumerate().filter(|(_, e)| **e == **num).map(|(idx, _)| idx).collect::<VecDeque<usize>>())).collect::<HashMap<i64, VecDeque<usize>>>();
+    println!("CFGET {:?}", configs.get(&(5061*811589153)).unwrap());
+    // need [0, 811589153, 2434767459, 3246356612, 1623178306, -1623178306, -2434767459]
+    // [2434767459, 3246356612, 1623178306, -1623178306, -2434767459, 0, 811589153]
+    //  [2434767459, 3246356612, 1623178306, -1623178306, -2434767459, 0, 811589153]
     for next_element in original_vec {
 
         //println!("VL {:?}", visited.len());
 
         //println!("REMAINING {}", original_vec.len());
         //println!("LENGTH OF VEC BEFORE POPPING {}", configs.get(&next_element).unwrap().len());
-        println!("{:?}", configs);
+        // println!("{:?}", configs);
         let mut ptr = configs.get_mut(&next_element).unwrap().pop_front().unwrap();  //vec.iter().enumerate().filter(|(idx, e)| **e == next_element && !visited.contains(idx)).map(|(idx, _)| idx).next().unwrap();
-        println!("PTR {}", ptr);
+        //println!("PTR {}", ptr);
         //println!("LENGTH OF VEC AFTER POPPING {}", configs.get(&next_element).unwrap().len());
         //println!("POINTER AT {}", ptr);
         /*
@@ -233,7 +237,6 @@ fn mix_signal_2(mut vec: Vec<i64>, original_vec: &Vec<i64>, mut configs: HashMap
         } else {
             (insertion_position-1, insertion_position+1)
         };
-        println!("{} moves between {} and {}", element, vec[ipl], vec[ipr]);
 
         let ptr_prev = ptr;
 
@@ -242,8 +245,8 @@ fn mix_signal_2(mut vec: Vec<i64>, original_vec: &Vec<i64>, mut configs: HashMap
             ptr %= vec.len();
         }
 
-
-        println!("VEC AFTER {:?}", vec);
+        //println!("{} moves between {} and {}", element, vec[ipl], vec[ipr]);
+        //println!("VEC AFTER {:?}", vec);
         
         // visited = visited.into_iter().map(|x| (x + (insertion_position < x) as usize - (x >= ptr_prev) as usize) % vec.len()).collect();
         configs = configs.into_iter().map(|(k, v)| (k, v.into_iter().map(|x| {
