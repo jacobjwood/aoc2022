@@ -138,6 +138,24 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
     let cube_4_neighbors = HashMap::from([("right", (2, "right")), ("down", (6, "right")), ("left", (5, "right")), ("up", (3, "bottom"))]);
     let cube_5_neighbors = HashMap::from([("right", (4, "left")), ("down", (6, "top")), ("left", (1, "left")), ("up", (3, "left"))]);
     let cube_6_neighbors = HashMap::from([("right", (4, "bottom")), ("down", (2, "top")), ("left", (1, "top")), ("up", (5, "bottom"))]);
+    
+    /*
+
+    // TEST CASE
+    let cube_1_diagonal = ((0, 8), (3, 11));
+    let cube_2_diagonal = ((4, 8), (7, 11));
+    let cube_3_diagonal = ((4, 4), (7, 7));
+    let cube_4_diagonal = ((4, 0), (7, 3));
+    let cube_5_diagonal = ((8, 8), (11, 11));
+    let cube_6_diagonal = ((8, 12), (8, 15));
+
+    let cube_1_neighbors = HashMap::from([("right", (6, "right")), ("down", (2, "top")), ("left", (3, "top")), ("up", (4, "top"))]);
+    let cube_2_neighbors = HashMap::from([("right", (6, "top")), ("down", (5, "top")), ("left", (3, "right")), ("up", (1, "bottom"))]);
+    let cube_3_neighbors = HashMap::from([("right", (2, "left")), ("down", (5, "left")), ("left", (4, "right")), ("up", (1, "left"))]);
+    let cube_4_neighbors = HashMap::from([("right", (3, "left")), ("down", (5, "bottom")), ("left", (6, "bottom")), ("up", (1, "top"))]);
+    let cube_5_neighbors = HashMap::from([("right", (6, "left")), ("down", (4, "bottom")), ("left", (3, "bottom")), ("up", (2, "bottom"))]);
+    let cube_6_neighbors = HashMap::from([("right", (1, "right")), ("down", (4, "left")), ("left", (5, "right")), ("up", (2, "right"))]);
+    */
 
     let cubes = [cube_1_neighbors, cube_2_neighbors, cube_3_neighbors, cube_4_neighbors, cube_5_neighbors, cube_6_neighbors];
 
@@ -149,23 +167,27 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
 
     'outer: while let Some(instruction) = instructions.pop()  {
 
-        println!("INSTRUCTION: {}", instruction);
+        println!("INSTRUCTION: {} {:?}", instruction, direction);
 
         if !instruction.chars().fold(true, |acc, c| acc && c.is_numeric()) {
+            println!("DIR BEFORE {:?}", direction);
             match instruction.as_str() {
                 "L" => direction = (-direction.1, direction.0),
                 "R" => direction = (direction.1, -direction.0),
                 _ => ()
             }
+            println!("DIR AFTER: {:?}", direction);
             continue;
         }
 
         let moves = instruction.parse::<i32>().unwrap();
 
+        let mut prev_dir = direction.to_owned();
+
         'inner: for i in 0..moves {
             let mut next = (position.0 + direction.0, position.1 + direction.1);
 
-            println!("POS {:?}", position);
+            println!("POS {:?} DIR {:?} NEXT {:?}", position, direction, next);
 
             // logic to change here
             if !state_set.contains(&next) {
@@ -173,9 +195,7 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
                 println!("CUBIC SHIFT");
                 cubic_shifts += 1;
 
-                if cubic_shifts > 6 {
-                    panic!();
-                }
+
 
                 let diagonals = [cube_1_diagonal, cube_2_diagonal, cube_3_diagonal, cube_4_diagonal, cube_5_diagonal, cube_6_diagonal];
                 let mut current_cube = 0;
@@ -198,7 +218,7 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
                     (0, -1) => ("left", current_neighbors.get(&"left").unwrap()),
                     (1, 0) => ("down", current_neighbors.get(&"down").unwrap()),
                     (-1, 0) => ("up", current_neighbors.get(&"up").unwrap()),
-                    _ => ("up", current_neighbors.get(&"up").unwrap()), // arm shouldn't ever be triggered so this is hacky
+                    _ => ("jup", current_neighbors.get(&"up").unwrap()), // arm shouldn't ever be triggered so this is hacky
                 };
 
                 let (next_cube, entry_edge) = neighbor_cube.to_owned();
@@ -237,7 +257,9 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
                     _ => (1, 1), // should never be triggered
                 };
 
-
+                // position = next;
+                //println!("CUBIC SHIFT: POS {:?}, NEXT {:?}", position, next);
+                prev_dir = direction.to_owned();
                 direction = match entry_edge {
                     "left" => (0, 1),
                     "right" => (0, -1),
@@ -246,20 +268,32 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
                     _ => (1, 1), // shouldn't ever trigger
                 };
 
-                println!("CUBIC SHIFT: POS {:?}, NEXT {:?}", position, next);
+                if wall_set.contains(&next) {
+                    println!("HIT WALL");
+                    direction = prev_dir;
+                    break 'inner;
+                }
+                    
 
-            
-
-                
             }
 
             if wall_set.contains(&next) {
+                println!("HIT WALL");
+                //direction = prev_dir;
                 break 'inner;
             } else {
                 position = next;
+                println!("CUBIC SHIFT: POS {:?}, NEXT {:?}", position, next);
+                
             }
 
+            
+
+            
+
         }
+
+        println!("POS {:?}", position);
 
     }
 
@@ -270,7 +304,8 @@ fn navigate_2(instructions: &Vec<String>, state_set: &HashSet<(i32, i32)>, wall_
         (-1, 0) => 3,
         _ => 100,
     };
-
+    println!("{:?}", direction);
+    println!("{:?}", position);
     let final_sum = (1000 * (position.0 + 1)) + (4 * (position.1 + 1)) + facing;
     println!("Part 2: {}", final_sum);
 }
