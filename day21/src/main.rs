@@ -33,7 +33,7 @@ fn main() -> Result<(), fasteval::Error>  {
         //monkey_mapping.insert()
     }
 
-    println!("ROOT {}", root);
+    //println!("ROOT {}", root);
     let mut root2 = root.to_owned();
 
     loop {

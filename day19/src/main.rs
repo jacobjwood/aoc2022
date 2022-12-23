@@ -68,10 +68,15 @@ fn bound(
     let estimand = 6;
 
     // this bound estimate is the thing I need to get right
-    let estimate = (robot_count.3 * time_remaining) + item_count.3 + 25 - time_remaining;
-    // println!("ES {}, CB {}", estimate, current_best);
+    // max 24 robots can be built
+    // time to geo robot if every effort concerns getting to a geo robot
+    if robot_count.3 > 0 {
+        true
+    } else if robot_count.2 > 0 {
+        
+    }
     
-    estimate >= *current_best
+    //estimate >= *current_best
 }
 
 fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
