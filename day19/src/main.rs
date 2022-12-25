@@ -1,8 +1,8 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, VecDeque, HashSet};
 use std::fs;
 
 fn main() {
-    let file_path = "input_test.txt";
+    let file_path = "input.txt";
     println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
@@ -11,7 +11,7 @@ fn main() {
 
     println!("{:?}", bp_recipes);
 
-    for x in 1..=2 {
+    for x in 1..=30 {
         let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap());
         println!("{}", x * geode_count);
     }
@@ -60,6 +60,7 @@ fn bound(
     item_count: &(usize, usize, usize, usize),
     robot_count: &(usize, usize, usize, usize),
     recipes: &HashMap<&str, (usize, usize, usize)>,
+    min_time_to_geode_robot: &usize, 
 ) -> bool {
 
     let time_remaining = 25 - time;
@@ -70,13 +71,22 @@ fn bound(
     // this bound estimate is the thing I need to get right
     // max 24 robots can be built
     // time to geo robot if every effort concerns getting to a geo robot
-    if robot_count.3 > 0 {
-        true
-    } else if robot_count.2 > 0 {
-        
+
+    if min_time_to_geode_robot < time && robot_count.3 < 1 {
+        return false;
     }
     
     //estimate >= *current_best
+    if robot_count.1 > clay_req {
+        if robot_count.2 > obs_req {
+            false
+        } else {
+            true
+        }
+    } else {
+        true
+    }
+
 }
 
 fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
@@ -87,6 +97,12 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
     let check_order = vec!["geode", "obsidian", "clay", "ore"];
     let mut time = 0;
     let mut best_geode = 0;
+    let mut best_geode_prev = 0;
+    let mut min_time_to_geode_robot = 24;
+    let mut repeat_count = 0;
+
+    // time, robot count, geode count
+    let mut visited_states : HashSet<(usize, (usize, usize, usize, usize), (usize, usize, usize, usize))> = HashSet::new();
 
     let mut traj_vec: Vec<(
         usize,
@@ -98,9 +114,28 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
     'outer: while let Some((time, item_count, robot_count)) = traj_vec.pop() {
         //println!("TIME {} BG {} RC {:?} IC {:?}", time, best_geode, robot_count, item_count);
 
+        if visited_states.contains(&(time, robot_count, item_count)) {
+            //println!("JEFF");
+            continue;
+        }
+
+        visited_states.insert((time, robot_count, item_count));
+
         if time == 24 {
             //println!("JEFF {}", item_count.3);
+            if best_geode == best_geode_prev {
+                repeat_count += 1;
+            }
+
+            /*
+            if repeat_count == 50000 {
+                break 'outer;
+            }
+            */
+
+            best_geode_prev = best_geode;
             best_geode = std::cmp::max(item_count.3, best_geode);
+            //println!("BG {}", best_geode);
             continue;
         }
 
@@ -138,8 +173,12 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
                 }
 
                 //println!("ROBOT AFTER {:?}", new_robot_count);
+                if robot_count.3 >= 1 {
+                    min_time_to_geode_robot = std::cmp::min(min_time_to_geode_robot, time);
+                    //println!("Min time {}", min_time_to_geode_robot);
+                }
 
-                if bound(&best_geode, &time, &new_item_count, &new_robot_count, &recipes) {
+                if bound(&best_geode, &time, &new_item_count, &new_robot_count, &recipes, &min_time_to_geode_robot) {
                     traj_vec.push((time + 1, new_item_count, new_robot_count));
                     traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
                 }
@@ -154,7 +193,7 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
         new_item_count.2 += resources_to_add.2;
         new_item_count.3 += resources_to_add.3;
 
-        if bound(&best_geode, &time, &new_item_count, &robot_count, &recipes) {
+        if bound(&best_geode, &time, &new_item_count, &robot_count, &recipes, &min_time_to_geode_robot) {
             traj_vec.push((time + 1, new_item_count, robot_count));
             traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
         }
