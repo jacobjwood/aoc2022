@@ -10,11 +10,25 @@ fn main() {
     let bp_recipes = parse_input(&contents);
 
     println!("{:?}", bp_recipes);
-
+    /*
+    let mut running_qual = 0;
     for x in 1..=30 {
-        let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap());
+        let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap(), &24);
         println!("{}", x * geode_count);
+        running_qual += x * geode_count;
     }
+
+    println!("Part 1: {}", running_qual);
+
+    */
+
+    let mut running_geo_prod = 1;
+    for x in 1..=3 {
+        let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap(), &32);
+        running_geo_prod *= geode_count;
+    }
+
+    println!("Part 2: {}", running_geo_prod);
 }
 
 fn parse_input(contents: &String) -> HashMap<usize, HashMap<&str, (usize, usize, usize)>> {
@@ -57,71 +71,145 @@ fn parse_input(contents: &String) -> HashMap<usize, HashMap<&str, (usize, usize,
 fn bound(
     current_best: &usize,
     time: &usize,
+    tl: &usize,
     item_count: &(usize, usize, usize, usize),
     robot_count: &(usize, usize, usize, usize),
     recipes: &HashMap<&str, (usize, usize, usize)>,
     min_time_to_geode_robot: &usize, 
 ) -> bool {
 
-    let time_remaining = 25 - time;
+    let time_remaining = tl + 1 - time;
+    let ore_req_ore = recipes.get(&"ore").unwrap().0;
+    let ore_req_clay = recipes.get(&"clay").unwrap().0;
+    let ore_req_obs = recipes.get(&"obsidian").unwrap().0;
+    let ore_req_geo = recipes.get(&"geode").unwrap().0;
     let obs_req = recipes.get(&"geode").unwrap().2;
     let clay_req = recipes.get(&"obsidian").unwrap().1;
-    let estimand = 6;
+    let ore_req_max = recipes.iter().map(|(_, v)| v.0).max().unwrap();
+    let (ore_bots, clay_bots, obs_bots, geo_bots) = robot_count;
+    let (ore_count, clay_count, obs_count, geo_count) = item_count;
 
     // this bound estimate is the thing I need to get right
     // max 24 robots can be built
     // time to geo robot if every effort concerns getting to a geo robot
 
-    if min_time_to_geode_robot < time && robot_count.3 < 1 {
+    // already saturated enough
+    if clay_bots > &clay_req {
+        return false;
+    }
+
+    if obs_bots > &obs_req {
+        return false;
+    }
+
+    if ore_bots > &ore_req_max {
         return false;
     }
     
-    //estimate >= *current_best
-    if robot_count.1 > clay_req {
-        if robot_count.2 > obs_req {
-            false
+    /*
+    if *clay_bots == 0 {
+        // time to clay bot
+        let ttc = 1 + (ore_req_clay - std::cmp::min(ore_req_clay, *ore_count)) / ore_bots;
+        let tto = 1 + ttc + std::cmp::max((clay_req - std::cmp::min(*clay_count,clay_req)), (ore_req_obs - std::cmp::min(ore_req_obs, *ore_count)) / ore_bots);
+        let ttg = 1 + tto + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)), (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots);
+
+        //println!("{} {}", ttg, time_remaining);
+        if ttg > time_remaining {
+            return false;
         } else {
-            true
+            return true;
+        }
+    } else if *obs_bots == 0 {
+        let tto = 1 + std::cmp::max((clay_req - std::cmp::min(*clay_count,clay_req)) / clay_bots, (ore_req_obs - std::cmp::min(ore_req_obs, *ore_count)) / ore_bots);
+        let ttg = 1 + tto + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)), (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots);
+
+        //println!("{} {}", ttg, time_remaining);
+
+        if ttg > time_remaining {
+            return false;
+        } else {
+            return true;
         }
     } else {
-        true
+        let ttg = 1 + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)) / obs_bots, (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots); 
+
+        //println!("{} {} {}", time, ttg, time_remaining);
+        if ttg > time_remaining {
+            return false;
+        } else {
+            return true;
+        }
     }
+    */
+    if time > &24 && robot_count.0 == ore_req_max && geo_count > &1 {
+        //println!("JEFF");
+    }
+    if time > &24 {
+        //println!("{:?}", robot_count);
+    }
+
+    true
 
 }
 
-fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
+fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) -> usize {
     //println!("{:?}", recipes);
     // ore, clay, obs, geode
     let mut item_count = (0, 0, 0, 0);
     let mut robot_count = (1, 0, 0, 0);
-    let check_order = vec!["geode", "obsidian", "clay", "ore"];
+    let check_order = vec!["ore", "clay", "obsidian", "geode"]; //vec!["geode", "obsidian", "clay", "ore"];
     let mut time = 0;
     let mut best_geode = 0;
     let mut best_geode_prev = 0;
+    let mut best_rob = 0;
     let mut min_time_to_geode_robot = 24;
     let mut repeat_count = 0;
 
     // time, robot count, geode count
     let mut visited_states : HashSet<(usize, (usize, usize, usize, usize), (usize, usize, usize, usize))> = HashSet::new();
+    let mut min_time_to_state : HashMap<((usize, usize, usize, usize), (usize, usize, usize, usize), i32), usize> = HashMap::new();
 
     let mut traj_vec: Vec<(
         usize,
         (usize, usize, usize, usize),
         (usize, usize, usize, usize),
+        i32
     )> = Vec::new();
-    traj_vec.push((time, item_count, robot_count));
+    traj_vec.push((time, item_count, robot_count, -1));
 
-    'outer: while let Some((time, item_count, robot_count)) = traj_vec.pop() {
-        //println!("TIME {} BG {} RC {:?} IC {:?}", time, best_geode, robot_count, item_count);
+    'outer: while let Some((time, item_count, robot_count, choose_not)) = traj_vec.pop() {
+        //println!("TIME {} BG {} RC {:?} IC {:?}", time, best_geode, robot_c   oun    t, item_count);
+        let tr = tl - time;
+        //println!("mm {}", traj_vec.len());
+        best_rob = std::cmp::max(robot_count.3, best_rob); 
 
         if visited_states.contains(&(time, robot_count, item_count)) {
-            //println!("JEFF");
+            //println!("ALREADY VISITED");
             continue;
         }
 
+        let entry = min_time_to_state.get(&(item_count, robot_count, choose_not));
+
+        best_geode = std::cmp::max(item_count.3 +(robot_count.3 * tr), best_geode);
+
+        match entry {
+            Some(t) => {
+                if *t <= time {
+                    continue;
+                } else {
+                    let entree = min_time_to_state.entry((item_count, robot_count, choose_not)).or_insert(time);
+                    *entree = std::cmp::min(time, *entree);
+                }
+            }
+            None => {min_time_to_state.insert((item_count, robot_count, choose_not), time);},
+        }
+        //println!("{:?}, {:?}, {} {}", item_count, robot_count, entry, time);
+        //*entry = std::cmp::min(*entry, time);
+        
+
         visited_states.insert((time, robot_count, item_count));
 
-        if time == 24 {
+        if time == *tl {
             //println!("JEFF {}", item_count.3);
             if best_geode == best_geode_prev {
                 repeat_count += 1;
@@ -135,18 +223,31 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
 
             best_geode_prev = best_geode;
             best_geode = std::cmp::max(item_count.3, best_geode);
+
             //println!("BG {}", best_geode);
             continue;
         }
 
         let resources_to_add = robot_count.to_owned();
+        let mut best_could_build : i32 = -1;
 
-        'inner: for (idx, c) in check_order.iter().enumerate() {
+        let bcb : usize = if choose_not == -1 {
+            0
+        } else {
+            choose_not.abs() as usize
+        };
+
+        //println!("{:?} {}", check_order, bcb);
+
+        'inner: for (idx, c) in check_order.iter().rev().enumerate() {
             // println!("{:?}", recipes.get(c).unwrap());
             let (ore_req, clay_req, obs_req) = recipes.get(c).unwrap();
 
             // can synthesise
             if item_count.0 >= *ore_req && item_count.1 >= *clay_req && item_count.2 >= *obs_req {
+
+                best_could_build = std::cmp::max(best_could_build, (3 - idx) as i32) as i32;
+                //println!("BCB {}", best_could_build); 
                 let mut new_item_count = item_count.to_owned();
                 let mut new_robot_count = robot_count.to_owned();
 
@@ -178,11 +279,14 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
                     //println!("Min time {}", min_time_to_geode_robot);
                 }
 
-                if bound(&best_geode, &time, &new_item_count, &new_robot_count, &recipes, &min_time_to_geode_robot) {
-                    traj_vec.push((time + 1, new_item_count, new_robot_count));
-                    traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
+                if true && bound(&best_geode, &time, &tl, &new_item_count, &new_robot_count, &recipes, &min_time_to_geode_robot) {
+
+                    //let mut entry = min_time_to_state.entry((new_item_count, new_robot_count, -1)).or_insert(time+1);
+                    //*entry = std::cmp::min(*entry, time+1);
+                    traj_vec.push((time + 1, new_item_count, new_robot_count, -1));
+                    //traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
                 }
-                
+            
             }
         }
 
@@ -193,13 +297,17 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>) -> usize {
         new_item_count.2 += resources_to_add.2;
         new_item_count.3 += resources_to_add.3;
 
-        if bound(&best_geode, &time, &new_item_count, &robot_count, &recipes, &min_time_to_geode_robot) {
-            traj_vec.push((time + 1, new_item_count, robot_count));
-            traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
+        //println!("BCB {}", best_could_build);
+
+        if true && bound(&best_geode, &time, &tl, &new_item_count, &robot_count, &recipes, &min_time_to_geode_robot) {
+            
+            //let mut entry = min_time_to_state.entry((new_item_count, robot_count, best_could_build)).or_insert(time+1);
+            traj_vec.push((time + 1, new_item_count, robot_count, best_could_build as i32));
+            //traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
         }
         
     }
-
+    println!("Best_ROB {}", best_rob);
     best_geode
 }
 
