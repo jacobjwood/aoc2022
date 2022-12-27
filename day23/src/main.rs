@@ -1,12 +1,11 @@
+use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::collections::{HashSet, HashMap};
 
 fn main() {
     let file_path = "input.txt";
     println!("In file {}", file_path);
 
-    let contents = fs::read_to_string(file_path)
-        .expect("Should have been able to read the file");
+    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
 
     let mut elf_set = parse_input(&contents);
     //let mut elf_states = elf_set.iter().map(|elf| (elf.to_owned(), 0)).collect::<HashMap<_, _>>();
@@ -19,7 +18,12 @@ fn main() {
         print_grid(&elf_set);
     }
 
-    let empty_spaces = (elf_set.iter().map(|x| x.0).max().unwrap() - elf_set.iter().map(|x| x.0).min().unwrap() + 1) * (elf_set.iter().map(|x| x.1).max().unwrap() - elf_set.iter().map(|x| x.1).min().unwrap() + 1) - elf_set.len() as i32;
+    let empty_spaces = (elf_set.iter().map(|x| x.0).max().unwrap()
+        - elf_set.iter().map(|x| x.0).min().unwrap()
+        + 1)
+        * (elf_set.iter().map(|x| x.1).max().unwrap() - elf_set.iter().map(|x| x.1).min().unwrap()
+            + 1)
+        - elf_set.len() as i32;
     println!("Part 1: {}", empty_spaces);
 
     let mut elf_set = parse_input(&contents);
@@ -33,13 +37,10 @@ fn main() {
     }
 
     println!("Part 2: {}", loop_count);
-        
-
 }
 
 fn parse_input(contents: &str) -> HashSet<(i32, i32)> {
-
-    let mut elf_set : HashSet<(i32, i32)> = HashSet::new();
+    let mut elf_set: HashSet<(i32, i32)> = HashSet::new();
     for (r_idx, line) in contents.lines().enumerate() {
         //println!("{}", r_idx);
         for (c_idx, c) in line.chars().enumerate() {
@@ -53,41 +54,61 @@ fn parse_input(contents: &str) -> HashSet<(i32, i32)> {
 }
 
 fn simulate_round(elf_set: &mut HashSet<(i32, i32)>, elf_state: &mut usize) -> bool {
-
-    let mut next_proposed : HashMap<(i32, i32), Vec<(i32, i32)>> = HashMap::new();
-    let mut next_proposed_actual : HashMap<(i32, i32), (i32, i32)> = HashMap::new();
+    let mut next_proposed: HashMap<(i32, i32), Vec<(i32, i32)>> = HashMap::new();
+    let mut next_proposed_actual: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
 
     'outer: for elf in elf_set.iter() {
         //println!("{:?}", elf);
         // north ne nw, s, se, sw, etc.
-        let directions = vec![(elf.0 - 1, elf.1), (elf.0 - 1, elf.1 + 1), (elf.0 - 1, elf.1 - 1),
-                          (elf.0 + 1, elf.1), (elf.0 + 1, elf.1 - 1), (elf.0 + 1, elf.1 + 1),
-                          (elf.0, elf.1 - 1), (elf.0 - 1, elf.1 - 1), (elf.0 + 1, elf.1 - 1),
-                          (elf.0, elf.1 + 1), (elf.0 + 1, elf.1 + 1), (elf.0 - 1, elf.1 + 1),
-                          ];
-        let move_bool = !directions.iter().fold(true, |acc, item| acc && !elf_set.contains(&item));
-        if !move_bool { continue 'outer; };
+        let directions = vec![
+            (elf.0 - 1, elf.1),
+            (elf.0 - 1, elf.1 + 1),
+            (elf.0 - 1, elf.1 - 1),
+            (elf.0 + 1, elf.1),
+            (elf.0 + 1, elf.1 - 1),
+            (elf.0 + 1, elf.1 + 1),
+            (elf.0, elf.1 - 1),
+            (elf.0 - 1, elf.1 - 1),
+            (elf.0 + 1, elf.1 - 1),
+            (elf.0, elf.1 + 1),
+            (elf.0 + 1, elf.1 + 1),
+            (elf.0 - 1, elf.1 + 1),
+        ];
+        let move_bool = !directions
+            .iter()
+            .fold(true, |acc, item| acc && !elf_set.contains(&item));
+        if !move_bool {
+            continue 'outer;
+        };
         //let elf_state = elf_states.get_mut(elf).unwrap();
         let mut round_es = elf_state.to_owned();
 
         for _ in 0..4 {
             //println!("{}", round_es);
-            let choice = &directions[(3*round_es)..(3*round_es)+3];
-            let move_bool = !choice.iter().fold(true, |acc, item| acc && !elf_set.contains(&item));
+            let choice = &directions[(3 * round_es)..(3 * round_es) + 3];
+            let move_bool = !choice
+                .iter()
+                .fold(true, |acc, item| acc && !elf_set.contains(&item));
             if !move_bool {
                 //println!("{:?} choice {:?}, mb {:?}", elf, choice[0], move_bool);
-                next_proposed.entry(choice[0]).or_insert(Vec::new()).push(elf.to_owned());
+                next_proposed
+                    .entry(choice[0])
+                    .or_insert(Vec::new())
+                    .push(elf.to_owned());
                 break;
             }
             round_es += 1;
             round_es %= 4;
         }
-        
-        //println!("{:?}", first_choices);
 
+        //println!("{:?}", first_choices);
     }
 
-    next_proposed_actual = next_proposed.iter().filter(|(_, v)| v.len() == 1).map(|(s, v)| (*s, v[0])).collect::<HashMap<(i32, i32), (i32, i32)>>();
+    next_proposed_actual = next_proposed
+        .iter()
+        .filter(|(_, v)| v.len() == 1)
+        .map(|(s, v)| (*s, v[0]))
+        .collect::<HashMap<(i32, i32), (i32, i32)>>();
 
     if next_proposed_actual.len() == 0 {
         return false;
@@ -109,7 +130,7 @@ fn simulate_round(elf_set: &mut HashSet<(i32, i32)>, elf_state: &mut usize) -> b
     *elf_state %= 4;
 
     //println!("{:?}", elf_states);
-    true 
+    true
 }
 
 fn print_grid(elf_set: &HashSet<(i32, i32)>) {

@@ -1,4 +1,4 @@
-use std::collections::{VecDeque, HashMap};
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 
 #[derive(Debug)]
@@ -8,7 +8,6 @@ struct Monkey<'a> {
     operation: &'a str,
     test_quotient: u128,
     throw_monkeys: [u32; 2],
-
 }
 
 fn main() {
@@ -19,19 +18,23 @@ fn main() {
 
     let mut monkey_map = init_monkeys(&contents);
 
-    let mut divisors = monkey_map.iter().map(|m| m.test_quotient).collect::<Vec<u128>>();
+    let mut divisors = monkey_map
+        .iter()
+        .map(|m| m.test_quotient)
+        .collect::<Vec<u128>>();
     println!("Divisors {:?}", divisors);
-    let mut monkey_item_count : Vec<u128> = Vec::new();
+    let mut monkey_item_count: Vec<u128> = Vec::new();
 
     for _ in 0..monkey_map.len() {
         monkey_item_count.push(0);
     }
     //println!("{:?}", monkey_item_count);
 
-   println!("{:#?}", monkey_map);
+    println!("{:#?}", monkey_map);
 
-    
-    for _ in 0..20 { monkey_cycles1(&mut monkey_map, &mut monkey_item_count, true) };
+    for _ in 0..20 {
+        monkey_cycles1(&mut monkey_map, &mut monkey_item_count, true)
+    }
 
     println!("\n MONKEY MUTATED \n");
     //println!("{:#?}", monkey_map);
@@ -39,19 +42,23 @@ fn main() {
     //let mut monkey_map = init_monkeys(&contents);
     println!("{:?}", monkey_item_count);
     monkey_item_count.sort_by(|a, b| b.cmp(a));
-    println!("Part 1: {:?}", monkey_item_count[..2].iter().product::<u128>());
+    println!(
+        "Part 1: {:?}",
+        monkey_item_count[..2].iter().product::<u128>()
+    );
 
     if true {
         let mut monkey_map = init_monkeys(&contents);
         //println!("{}", contents);
-        let mut monkey_item_count : Vec<u128> = Vec::new();
+        let mut monkey_item_count: Vec<u128> = Vec::new();
 
         for _ in 0..monkey_map.len() {
             monkey_item_count.push(0);
         }
 
-        for _ in 0..10000 { monkey_cycles1(&mut monkey_map, &mut monkey_item_count, false) };
-
+        for _ in 0..10000 {
+            monkey_cycles1(&mut monkey_map, &mut monkey_item_count, false)
+        }
 
         println!("\n MONKEY MUTATED \n");
         //println!("{:#?}", monkey_map);
@@ -59,8 +66,11 @@ fn main() {
         //let mut monkey_map = init_monkeys(&contents);
         println!("{:?}", monkey_item_count);
         monkey_item_count.sort_by(|a, b| b.cmp(a));
-        println!("Part 2: {:?}", monkey_item_count[..2].iter().product::<u128>());
-    }   
+        println!(
+            "Part 2: {:?}",
+            monkey_item_count[..2].iter().product::<u128>()
+        );
+    }
 
     // println!("\n MONKEY MUTATED \n");
     // println!("{:#?}", monkey_map);
@@ -68,7 +78,6 @@ fn main() {
     //let mut monkey_map = init_monkeys(&contents);
     // monkey_item_count.sort_by(|a, b| b.cmp(a));
     // println!("Part 1: {:?}", monkey_item_count[..2].iter().product::<u128>());
-
 
     /*
     println!("{:?}", monkey_map);
@@ -95,23 +104,19 @@ fn main() {
 
     }
     */
-    
 }
 
 fn init_monkeys(contents: &str) -> Vec<Monkey> {
     let mut monkey_map: Vec<Monkey> = Vec::new();
 
     for monkey_info in contents.split("\n\n") {
-
-        let mut items : VecDeque<u128> = VecDeque::new();
-        let mut items_repr : VecDeque<HashMap<u128, (u128, u128)>> = VecDeque::new();
-        let mut operation : &str = &"";
-        let mut test_quotient : u128 = 1;
-        let mut throw_monkeys : [u32; 2] = [0, 0];
-
+        let mut items: VecDeque<u128> = VecDeque::new();
+        let mut items_repr: VecDeque<HashMap<u128, (u128, u128)>> = VecDeque::new();
+        let mut operation: &str = &"";
+        let mut test_quotient: u128 = 1;
+        let mut throw_monkeys: [u32; 2] = [0, 0];
 
         for line in monkey_info.split("\n") {
-
             let line_split = line.split(":").map(|s| s.trim()).collect::<Vec<&str>>();
             let info = line_split[0];
             let content = line_split[1];
@@ -122,10 +127,10 @@ fn init_monkeys(contents: &str) -> Vec<Monkey> {
                         .split(",")
                         .map(|s| s.trim().parse::<u128>().unwrap())
                         .collect::<VecDeque<u128>>();
-                },
+                }
                 "Operation" => {
                     operation = content.trim();
-                },
+                }
                 "Test" => {
                     test_quotient = content
                         .chars()
@@ -133,38 +138,50 @@ fn init_monkeys(contents: &str) -> Vec<Monkey> {
                         .collect::<String>()
                         .parse::<u128>()
                         .unwrap();
-                },
+                }
                 "If true" => {
                     throw_monkeys[0] = content
                         .chars()
                         .filter(|c| c.is_numeric())
                         .collect::<String>()
                         .parse::<u32>()
-                        .unwrap(); 
-                },
+                        .unwrap();
+                }
                 "If false" => {
                     throw_monkeys[1] = content
                         .chars()
                         .filter(|c| c.is_numeric())
                         .collect::<String>()
                         .parse::<u32>()
-                        .unwrap(); 
-                },
+                        .unwrap();
+                }
 
                 _ => (),
             }
-
         }
-        
-        let monkey = Monkey{ items, items_repr, operation, test_quotient, throw_monkeys};
+
+        let monkey = Monkey {
+            items,
+            items_repr,
+            operation,
+            test_quotient,
+            throw_monkeys,
+        };
         //println!("{:#?}", monkey);
         monkey_map.push(monkey);
     }
-    
+
     //println!("{:#?}", monkey_map);
-    let mut divisors = monkey_map.iter().map(|m| m.test_quotient).collect::<Vec<u128>>();
+    let mut divisors = monkey_map
+        .iter()
+        .map(|m| m.test_quotient)
+        .collect::<Vec<u128>>();
     for monkey_idx in 0..monkey_map.len() {
-        let mut items_repr = monkey_map[monkey_idx].items.iter().map(|item| get_repr(&item, &divisors)).collect::<VecDeque<_>>();
+        let mut items_repr = monkey_map[monkey_idx]
+            .items
+            .iter()
+            .map(|item| get_repr(&item, &divisors))
+            .collect::<VecDeque<_>>();
         monkey_map[monkey_idx].items_repr = items_repr;
     }
     monkey_map
@@ -180,7 +197,7 @@ fn parse_operation(item: &mut u128, operation: &str, worry: bool) -> u128 {
     };
 
     let operand_2 = match op_vec[4] {
-        "old" => *item, 
+        "old" => *item,
         _ => op_vec[4].parse::<u128>().unwrap(),
     };
 
@@ -189,7 +206,7 @@ fn parse_operation(item: &mut u128, operation: &str, worry: bool) -> u128 {
         "/" => operand_1 / operand_2,
         "+" => operand_1 + operand_2,
         "-" => operand_1 - operand_2,
-        _ => 0
+        _ => 0,
     };
 
     // println!("{} {} {} = {}", operand_1, op_vec[3], operand_2, result);
@@ -198,7 +215,6 @@ fn parse_operation(item: &mut u128, operation: &str, worry: bool) -> u128 {
         true => result / 3,
         false => result,
     }
-    
 }
 
 /*
@@ -237,25 +253,25 @@ fn monkey_cycles(monkey_map: &mut Vec<Monkey>, monkey_item_count: &mut Vec<u128>
             // println!("{}", item);
         }
         monkey_map[monkey_idx].items = VecDeque::new();
-        
-        
-    }    
+
+
+    }
 }
 */
 
 fn monkey_cycles1(monkey_map: &mut Vec<Monkey>, monkey_item_count: &mut Vec<u128>, worry: bool) {
-
     for monkey_idx in 0..monkey_map.len() {
-
         //println!("MONKEY {}", monkey_idx);
 
         for item_idx in 0..monkey_map[monkey_idx].items_repr.len() {
-
             monkey_item_count[monkey_idx] += 1;
 
             let mut item = monkey_map[monkey_idx].items_repr[item_idx].to_owned();
 
-            let printable_item = item.iter().map(|(k, v)| (k*v.0) + v.1).collect::<Vec<u128>>();
+            let printable_item = item
+                .iter()
+                .map(|(k, v)| (k * v.0) + v.1)
+                .collect::<Vec<u128>>();
 
             //println!("ITEM {:?}", printable_item);
 
@@ -274,11 +290,11 @@ fn monkey_cycles1(monkey_map: &mut Vec<Monkey>, monkey_item_count: &mut Vec<u128
                 0 => {
                     // println!("True, throwing to monkey {}", tm0);
                     monkey_map[tm0 as usize].items_repr.push_back(item);
-                },
+                }
                 _ => {
                     // println!("False, throwing to monkey {}", tm1);
                     monkey_map[tm1 as usize].items_repr.push_back(item)
-                },
+                }
             }
 
             // println!("{}", item);
@@ -286,17 +302,13 @@ fn monkey_cycles1(monkey_map: &mut Vec<Monkey>, monkey_item_count: &mut Vec<u128
             // println!("ITEM {:?}", printable_item)
         }
         monkey_map[monkey_idx].items_repr = VecDeque::new();
-        
-        
-    }    
+    }
 }
-
 
 // Part 1: 55930
 
 fn get_repr(item: &u128, divisors: &Vec<u128>) -> HashMap<u128, (u128, u128)> {
-
-    let mut repr : HashMap<u128, (u128, u128)> = HashMap::new();
+    let mut repr: HashMap<u128, (u128, u128)> = HashMap::new();
 
     for div in divisors {
         // println!("Item {}", item);
@@ -305,11 +317,9 @@ fn get_repr(item: &u128, divisors: &Vec<u128>) -> HashMap<u128, (u128, u128)> {
     }
 
     repr
-
 }
 
 fn update_repr(repr: &mut HashMap<u128, (u128, u128)>, operation: &str, worry: bool) {
-
     let mut count = 0;
 
     // println!("  NEW ITEM ==============================================");
@@ -326,7 +336,7 @@ fn update_repr(repr: &mut HashMap<u128, (u128, u128)>, operation: &str, worry: b
             _ => {
                 let value = op_vec[2].parse::<u128>().unwrap();
                 (value / k, value % k)
-            },
+            }
         };
 
         let operand_2 = match op_vec[4] {
@@ -334,7 +344,7 @@ fn update_repr(repr: &mut HashMap<u128, (u128, u128)>, operation: &str, worry: b
             _ => {
                 let value = op_vec[4].parse::<u128>().unwrap();
                 (value / k, value % k)
-            },
+            }
         };
 
         let mut result = match op_vec[3] {
@@ -348,23 +358,31 @@ fn update_repr(repr: &mut HashMap<u128, (u128, u128)>, operation: &str, worry: b
                 let operand_1_1_new = (r * s);
 
                 (0, operand_1_1_new % k)
-
-            },
+            }
             "+" => {
                 let operand_1_0_new = operand_1.0 + operand_2.0;
                 let operand_1_1_new = operand_1.1 + operand_2.1;
 
                 (0, ((operand_2.0 * k) + operand_2.1 + operand_1.1) % k)
-            },
-            _ => (0, 0)
+            }
+            _ => (0, 0),
         };
 
         if false {
             println!("  DIVISOR {}", k);
             println!("  OPERAND 1 {:?}", operand_1);
             println!("  OPERAND 2 {:?}", operand_2);
-            println!("  OPERATION {:?} {} {}", (k * operand_1.0) + operand_1.1, op_vec[3], operand_2.1);
-            println!("  BEFORE {:?} -> {:?} AFTER", (v.0 * k) + v.1, (result.0 * k) + result.1);
+            println!(
+                "  OPERATION {:?} {} {}",
+                (k * operand_1.0) + operand_1.1,
+                op_vec[3],
+                operand_2.1
+            );
+            println!(
+                "  BEFORE {:?} -> {:?} AFTER",
+                (v.0 * k) + v.1,
+                (result.0 * k) + result.1
+            );
             count += 1;
         }
 
@@ -372,7 +390,6 @@ fn update_repr(repr: &mut HashMap<u128, (u128, u128)>, operation: &str, worry: b
         // println!("{:?}", result);
 
         if worry {
-
             //println!("  Worry decreasing");
             // divide by 3 with integer division
             let result_0_over_3 = result.0 / 3;

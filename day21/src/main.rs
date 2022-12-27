@@ -1,19 +1,18 @@
-use std::fs;
-use std::collections::{BTreeMap, HashMap};
 use fasteval;
-use fasteval::{Evaler, Compiler};
+use fasteval::{Compiler, Evaler};
+use std::collections::{BTreeMap, HashMap};
+use std::fs;
 
-fn main() -> Result<(), fasteval::Error>  {
+fn main() -> Result<(), fasteval::Error> {
     let file_path = "input.txt";
     println!("In file {}", file_path);
 
-    let contents = fs::read_to_string(file_path)
-        .expect("Should have been able to read the file");
+    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
 
     //assert_eq!(val, 6.0);
-    let mut monkey_mapping : HashMap<String, String> = HashMap::new();
-    let mut map : BTreeMap<String, f64> = BTreeMap::new();
-    let mut root : String = String::new();
+    let mut monkey_mapping: HashMap<String, String> = HashMap::new();
+    let mut map: BTreeMap<String, f64> = BTreeMap::new();
+    let mut root: String = String::new();
 
     for c in contents.lines() {
         let k_v = c.split(":").map(|s| s.trim()).collect::<Vec<&str>>();
@@ -37,15 +36,21 @@ fn main() -> Result<(), fasteval::Error>  {
     let mut root2 = root.to_owned();
 
     loop {
-        let mut monkeys_in_eq = root.split(['+', '-', '/', '*', '(', ')']).map(|s| s.trim().to_owned()).collect::<Vec<String>>();
+        let mut monkeys_in_eq = root
+            .split(['+', '-', '/', '*', '(', ')'])
+            .map(|s| s.trim().to_owned())
+            .collect::<Vec<String>>();
         //println!("monkeys_in_eq {:?}", monkeys_in_eq);
 
-        monkeys_in_eq = monkeys_in_eq.into_iter().filter(|s| monkey_mapping.contains_key(s)).collect();
+        monkeys_in_eq = monkeys_in_eq
+            .into_iter()
+            .filter(|s| monkey_mapping.contains_key(s))
+            .collect();
         // check for substitution
         if monkeys_in_eq.len() == 0 {
             break;
         }
-        
+
         for monkey in monkeys_in_eq {
             let mut replacement = String::from("(");
             replacement.push_str(monkey_mapping.get(&monkey).unwrap());
@@ -53,7 +58,6 @@ fn main() -> Result<(), fasteval::Error>  {
             //println!("{:?}", replacement);
             root = root.replace(&monkey, &replacement);
         }
-            
     }
 
     //println!("ROOT {}", root);
@@ -64,7 +68,10 @@ fn main() -> Result<(), fasteval::Error>  {
 
     let mut slab = fasteval::Slab::with_capacity(4000);
 
-    let expr_ref = parser.parse(&root, &mut slab.ps)?.from(&slab.ps).compile(&slab.ps, &mut slab.cs);
+    let expr_ref = parser
+        .parse(&root, &mut slab.ps)?
+        .from(&slab.ps)
+        .compile(&slab.ps, &mut slab.cs);
 
     let val = expr_ref.eval(&slab, &mut map);
     //let val = fasteval::ez_eval(&root, &mut map)?;
@@ -74,15 +81,21 @@ fn main() -> Result<(), fasteval::Error>  {
     //println!("ROOT 2 {}", root2);
 
     loop {
-        let mut monkeys_in_eq = root2.split(['+', '-', '/', '*', '(', ')', '=']).map(|s| s.trim().to_owned()).collect::<Vec<String>>();
+        let mut monkeys_in_eq = root2
+            .split(['+', '-', '/', '*', '(', ')', '='])
+            .map(|s| s.trim().to_owned())
+            .collect::<Vec<String>>();
         //println!("monkeys_in_eq {:?}", monkeys_in_eq);
 
-        monkeys_in_eq = monkeys_in_eq.into_iter().filter(|s| monkey_mapping.contains_key(s)).collect();
+        monkeys_in_eq = monkeys_in_eq
+            .into_iter()
+            .filter(|s| monkey_mapping.contains_key(s))
+            .collect();
         // check for substitution
         if monkeys_in_eq.len() == 0 {
             break;
         }
-        
+
         for monkey in monkeys_in_eq {
             let mut replacement = String::from("(");
             replacement.push_str(monkey_mapping.get(&monkey).unwrap());
@@ -90,14 +103,19 @@ fn main() -> Result<(), fasteval::Error>  {
             //println!("{:?}", replacement);
             root2 = root2.replace(&monkey, &replacement);
         }
-            
     }
-    
-    //println!("ROOT 2 {}", root2); 
-    
+
+    //println!("ROOT 2 {}", root2);
+
     // Find the part that corresponds to no humn
-    let humn_part = root2.split("=").filter(|s| s.contains("humn")).collect::<String>();
-    let eval_part = root2.split("=").filter(|s| !s.contains("humn")).collect::<String>();
+    let humn_part = root2
+        .split("=")
+        .filter(|s| s.contains("humn"))
+        .collect::<String>();
+    let eval_part = root2
+        .split("=")
+        .filter(|s| !s.contains("humn"))
+        .collect::<String>();
 
     let mut parser = fasteval::Parser::new();
     parser.expr_len_limit = 64000;
@@ -105,14 +123,19 @@ fn main() -> Result<(), fasteval::Error>  {
 
     let mut slab = fasteval::Slab::with_capacity(4000);
 
-    let humn_part_expr = parser.parse(&humn_part, &mut slab.ps)?.from(&slab.ps).compile(&slab.ps, &mut slab.cs);
-    let eval_part_expr = parser.parse(&eval_part, &mut slab.ps)?.from(&slab.ps).compile(&slab.ps, &mut slab.cs);
-    
+    let humn_part_expr = parser
+        .parse(&humn_part, &mut slab.ps)?
+        .from(&slab.ps)
+        .compile(&slab.ps, &mut slab.cs);
+    let eval_part_expr = parser
+        .parse(&eval_part, &mut slab.ps)?
+        .from(&slab.ps)
+        .compile(&slab.ps, &mut slab.cs);
 
     //let mut step = 100;
     map.insert(String::from("humn"), 0.0);
-    
-    let mut step_size : i64 = 10000000000000;
+
+    let mut step_size: i64 = 10000000000000;
     let mut too_low_prev = false;
 
     loop {
@@ -134,7 +157,7 @@ fn main() -> Result<(), fasteval::Error>  {
             break;
         } else {
             if too_low {
-                    *map.get_mut("humn").unwrap() -= step_size as f64;
+                *map.get_mut("humn").unwrap() -= step_size as f64;
             } else {
                 *map.get_mut("humn").unwrap() += step_size as f64;
             }

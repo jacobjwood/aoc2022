@@ -49,7 +49,6 @@ fn parse_input(contents: &String) -> Vec<Vec<(i32, i32)>> {
         let mut row_vec: Vec<(i32, i32)> = Vec::new();
 
         for sb in line.split(":") {
-
             let s_or_b = sb
                 .split(",")
                 .map(|s| {
