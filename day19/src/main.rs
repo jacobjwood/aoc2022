@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque, HashSet};
 use std::fs;
 
 fn main() {
-    let file_path = "input.txt";
+    let file_path = "input_test.txt";
     println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
@@ -23,9 +23,10 @@ fn main() {
     */
 
     let mut running_geo_prod = 1;
-    for x in 1..=3 {
-        let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap(), &32);
+    for x in 1..=2 {
+        let geode_count = find_best_geodes(bp_recipes.get(&x).unwrap(), &24);
         running_geo_prod *= geode_count;
+        println!("Running prod: {}", running_geo_prod);
     }
 
     println!("Part 2: {}", running_geo_prod);
@@ -105,47 +106,20 @@ fn bound(
     if ore_bots > &ore_req_max {
         return false;
     }
-    
-    /*
-    if *clay_bots == 0 {
-        // time to clay bot
-        let ttc = 1 + (ore_req_clay - std::cmp::min(ore_req_clay, *ore_count)) / ore_bots;
-        let tto = 1 + ttc + std::cmp::max((clay_req - std::cmp::min(*clay_count,clay_req)), (ore_req_obs - std::cmp::min(ore_req_obs, *ore_count)) / ore_bots);
-        let ttg = 1 + tto + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)), (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots);
 
-        //println!("{} {}", ttg, time_remaining);
-        if ttg > time_remaining {
-            return false;
-        } else {
-            return true;
-        }
-    } else if *obs_bots == 0 {
-        let tto = 1 + std::cmp::max((clay_req - std::cmp::min(*clay_count,clay_req)) / clay_bots, (ore_req_obs - std::cmp::min(ore_req_obs, *ore_count)) / ore_bots);
-        let ttg = 1 + tto + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)), (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots);
 
-        //println!("{} {}", ttg, time_remaining);
 
-        if ttg > time_remaining {
-            return false;
-        } else {
-            return true;
-        }
-    } else {
-        let ttg = 1 + std::cmp::max((obs_req - std::cmp::min(obs_req, *obs_count)) / obs_bots, (ore_req_geo - std::cmp::min(*ore_count, ore_req_geo)) / ore_bots); 
+    // assume independence
+    //let ttg = std::cmp::min((ore_req_geo - std::cmp::min(ore_count, ore_req_geo)) / ore_bots, obs_req - std::cmp::min((obs_req, obs_count)) / obs_bots);
+    let potential_ore : usize = ore_count + ore_bots * time_remaining + (time_remaining * (time_remaining - 1) / (1 + ore_req_ore / ore_bots));
+    let potential_clay : usize = clay_count + clay_bots * time_remaining + (time_remaining * (time_remaining - 1) / (1 + ore_req_clay / ore_bots));
+    let potential_obs : usize = obs_count + obs_bots * time_remaining + (time_remaining * (time_remaining - 1) / 1 + std::cmp::min(clay_req / (clay_bots + 1), ore_req_obs / (ore_bots + 1)));
+    let potential_geo : usize = geo_count + geo_bots * time_remaining + (time_remaining * (time_remaining - 1) / 1 + std::cmp::min(obs_req / (obs_bots + 1), ore_req_geo / (ore_bots + 1)));
 
-        //println!("{} {} {}", time, ttg, time_remaining);
-        if ttg > time_remaining {
-            return false;
-        } else {
-            return true;
-        }
-    }
-    */
-    if time > &24 && robot_count.0 == ore_req_max && geo_count > &1 {
-        //println!("JEFF");
-    }
-    if time > &24 {
-        //println!("{:?}", robot_count);
+    //println!("PG {}, BG {}, PO {}, TR {}", potential_geo, current_best, potential_ore, time_remaining);
+
+    if potential_geo < *current_best {
+        return false;
     }
 
     true
@@ -157,7 +131,8 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
     // ore, clay, obs, geode
     let mut item_count = (0, 0, 0, 0);
     let mut robot_count = (1, 0, 0, 0);
-    let check_order = vec!["ore", "clay", "obsidian", "geode"]; //vec!["geode", "obsidian", "clay", "ore"];
+
+    let check_order = vec!["ore", "clay", "obsidian", "geode"];
     let mut time = 0;
     let mut best_geode = 0;
     let mut best_geode_prev = 0;
@@ -173,15 +148,17 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
         usize,
         (usize, usize, usize, usize),
         (usize, usize, usize, usize),
-        i32
+        i32,
     )> = Vec::new();
     traj_vec.push((time, item_count, robot_count, -1));
 
     'outer: while let Some((time, item_count, robot_count, choose_not)) = traj_vec.pop() {
         //println!("TIME {} BG {} RC {:?} IC {:?}", time, best_geode, robot_c   oun    t, item_count);
         let tr = tl - time;
+        //let (cn_ore, cn_clay, cn_obs, cn_geo) = choose_not;
         //println!("mm {}", traj_vec.len());
         best_rob = std::cmp::max(robot_count.3, best_rob); 
+        //println!("RC {:?} IC {:?} BG {:?}", robot_count, item_count, best_geode);
 
         if visited_states.contains(&(time, robot_count, item_count)) {
             //println!("ALREADY VISITED");
@@ -231,12 +208,6 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
         let resources_to_add = robot_count.to_owned();
         let mut best_could_build : i32 = -1;
 
-        let bcb : usize = if choose_not == -1 {
-            0
-        } else {
-            choose_not.abs() as usize
-        };
-
         //println!("{:?} {}", check_order, bcb);
 
         'inner: for (idx, c) in check_order.iter().rev().enumerate() {
@@ -245,6 +216,7 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
 
             // can synthesise
             if item_count.0 >= *ore_req && item_count.1 >= *clay_req && item_count.2 >= *obs_req {
+
 
                 best_could_build = std::cmp::max(best_could_build, (3 - idx) as i32) as i32;
                 //println!("BCB {}", best_could_build); 
@@ -284,12 +256,14 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
                     //let mut entry = min_time_to_state.entry((new_item_count, new_robot_count, -1)).or_insert(time+1);
                     //*entry = std::cmp::min(*entry, time+1);
                     traj_vec.push((time + 1, new_item_count, new_robot_count, -1));
-                    //traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
+                    //traj_vec.sort_by(|a, b| std::cmp::max(b.1.0, b.1.1).cmp(&a.1.1));
+                    //break;
                 }
             
             }
         }
 
+        //println!("HI");
         let mut new_item_count = item_count.to_owned();
 
         new_item_count.0 += resources_to_add.0;
@@ -297,18 +271,15 @@ fn find_best_geodes(recipes: &HashMap<&str, (usize, usize, usize)>, tl: &usize) 
         new_item_count.2 += resources_to_add.2;
         new_item_count.3 += resources_to_add.3;
 
-        //println!("BCB {}", best_could_build);
-
         if true && bound(&best_geode, &time, &tl, &new_item_count, &robot_count, &recipes, &min_time_to_geode_robot) {
             
             //let mut entry = min_time_to_state.entry((new_item_count, robot_count, best_could_build)).or_insert(time+1);
             traj_vec.push((time + 1, new_item_count, robot_count, best_could_build as i32));
             //traj_vec.sort_by(|a, b| b.1.0.cmp(&a.1.0));
+            //break;
         }
         
     }
     println!("Best_ROB {}", best_rob);
     best_geode
 }
-
-fn collect_ore() {}
